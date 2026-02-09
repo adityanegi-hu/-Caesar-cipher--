@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Caesar Cipher Tool</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/static/style.css" />
+</head>
+
+<body>
+    <div class="page">
+        <header class="header">
+            <h1>Caesar Cipher</h1>
+            <p class="subtitle">Encrypt and decrypt text with a simple shift.</p>
+        </header>
+
+        <main class="card">
+            <form id="cipher-form">
+                <div class="field">
+                    <label for="text">Text</label>
+                    <textarea id="text" name="text" rows="4" placeholder="Type or paste your text here..."></textarea>
+                </div>
+
+                <div class="field-group">
+                    <div class="field">
+                        <label for="shift">Shift (0–25)</label>
+                        <input id="shift" name="shift" type="number" min="0" max="25" value="3" />
+                    </div>
+
+                    <div class="field">
+                        <span class="label">Mode</span>
+                        <div class="mode-toggle">
+                            <label>
+                                <input type="radio" name="mode" value="encrypt" checked />
+                                <span>Encrypt</span>
+                            </label>
+                            <label>
+                                <input type="radio" name="mode" value="decrypt" />
+                                <span>Decrypt</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="actions">
+                    <button type="submit" id="run-button">Run</button>
+                    <button type="button" id="swap-button" class="secondary">
+                        Swap input/output
+                    </button>
+                </div>
+            </form>
+
+            <div class="field">
+                <label for="result">Result</label>
+                <textarea id="result" rows="4" readonly placeholder="Your result will appear here..."></textarea>
+            </div>
+
+            <p id="error" class="error" hidden></p>
+        </main>
+
+        <footer class="footer">
+            <span>Using your existing Python backend.</span>
+        </footer>
+    </div>
+
+    <script>
+        const form = document.getElementById("cipher-form");
+        const textInput = document.getElementById("text");
+        const shiftInput = document.getElementById("shift");
+        const resultArea = document.getElementById("result");
+        const errorEl = document.getElementById("error");
+        const runButton = document.getElementById("run-button");
+        const swapButton = document.getElementById("swap-button");
+
+        function setLoading(isLoading) {
+            runButton.disabled = isLoading;
+            runButton.textContent = isLoading ? "Working..." : "Run";
+        }
+
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            errorEl.hidden = true;
+            errorEl.textContent = "";
+
+            const text = textInput.value;
+            const shift = shiftInput.value;
+            const mode = form.mode.value;
+
+            if (!text.trim()) {
+                errorEl.textContent = "Please enter some text.";
+                errorEl.hidden = false;
+                return;
+            }
+
+            setLoading(true);
+            try {
+                const response = await fetch("/api/cipher", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text, shift, mode }),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || "Something went wrong.");
+                }
+
+                resultArea.value = data.result;
+            } catch (err) {
+                errorEl.textContent = err.message || "Something went wrong.";
+                errorEl.hidden = false;
+            } finally {
+                setLoading(false);
+            }
+        });
+
+        swapButton.addEventListener("click", () => {
+            const currentResult = resultArea.value;
+            const currentText = textInput.value;
+            resultArea.value = currentText;
+            textInput.value = currentResult;
+        });
+    </script>
+</body>
+
+</html>
+
