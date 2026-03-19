@@ -1,5 +1,4 @@
 # This code implements a Caesar cipher using Python. It includes encryption and decryption functions
-# that shift characters by a specified amount, preserving non-letter characters.
 
 def encrypt(text, shift):
     """
