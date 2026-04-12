@@ -189,3 +189,9 @@ button:disabled {
     }
 }
 
+.footer1 {
+    display: block;
+    margin-left: auto;
+    color: aqua;
+    text-size-adjust: calc(100% + 0.5rem);
+}
