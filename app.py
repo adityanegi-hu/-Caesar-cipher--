@@ -5,13 +5,22 @@ from Cipher import encrypt, decrypt
 app = Flask(__name__)
 
 
+@app.after_request
+def add_cors_headers(response):
+    """Allow browser requests from local static/dev origins."""
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+    return response
+
+
 @app.route("/")
 def index():
     """Render the main Caesar cipher page."""
     return render_template("index.html")
 
 
-@app.route("/api/cipher", methods=["POST"])
+@app.route("/api/cipher", methods=["POST", "OPTIONS"])
 def api_cipher():
     """
     Simple JSON API for Caesar cipher operations.
@@ -23,6 +32,9 @@ def api_cipher():
         "mode": "encrypt" | "decrypt"
     }
     """
+    if request.method == "OPTIONS":
+        return ("", 204)
+
     data = request.get_json(silent=True) or {}
 
     text = data.get("text", "")

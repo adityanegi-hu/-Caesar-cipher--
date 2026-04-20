@@ -81,6 +81,14 @@
             runButton.textContent = isLoading ? "Working..." : "Run";
         }
 
+        function getApiUrl() {
+            // If page is not served by Flask, call local Flask API directly.
+            if (window.location.origin === "http://127.0.0.1:5000" || window.location.origin === "http://localhost:5000") {
+                return "/api/cipher";
+            }
+            return "http://127.0.0.1:5000/api/cipher";
+        }
+
         form.addEventListener("submit", async (event) => {
             event.preventDefault();
             errorEl.hidden = true;
@@ -98,16 +106,38 @@
 
             setLoading(true);
             try {
-                const response = await fetch("/api/cipher", {
+                const response = await fetch(getApiUrl(), {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ text, shift, mode }),
                 });
 
-                const data = await response.json();
+                const rawBody = await response.text();
+                let data = {};
+
+                // Avoid crashing when backend returns empty or non-JSON body.
+                if (rawBody) {
+                    try {
+                        data = JSON.parse(rawBody);
+                    } catch (parseError) {
+                        if (!response.ok) {
+                            throw new Error("Server returned an invalid response.");
+                        }
+                        throw new Error("Could not read server response.");
+                    }
+                }
 
                 if (!response.ok) {
-                    throw new Error(data.error || "Something went wrong.");
+                    const serverMessage =
+                        data.error ||
+                        (rawBody && !rawBody.trim().startsWith("<") ? rawBody : "") ||
+                        response.statusText ||
+                        "Request failed.";
+                    throw new Error(`Request failed (${response.status}): ${serverMessage}`);
+                }
+
+                if (typeof data.result !== "string") {
+                    throw new Error("Server response is missing result text.");
                 }
 
                 resultArea.value = data.result;
